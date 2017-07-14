@@ -1,0 +1,49 @@
+package sql_test
+
+import (
+	"reflect"
+	"strings"
+	"testing"
+
+)
+func TestParser_ParseStatement(t *testing.T) {
+	var tests = []struct {
+		s    string
+		stmt *sql.InsertStatement
+		err  string
+	}{
+		
+
+		//INSERT STATEMENT
+		{
+			s: `INSERT into my_table`,
+			stmt: &sql.InsertStatement{
+				Fields:    []string{"column1", "column2", "column3"},
+				TableName: "my_table",
+			},
+		},
+
+		
+		// Errors
+		{s: `foo`, err: `found "foo", expected INSERT`},
+		{s: `SELECT !`, err: `found "!", expected field`},
+		{s: `SELECT field xxx`, err: `found "xxx", expected INTO`},
+		{s: `SELECT field VALUES `, err: `found "*", expected table name`},
+	}
+
+	for i, tt := range tests {
+		stmt, err := sql.NewParser(strings.NewReader(tt.s)).Parse()
+		if !reflect.DeepEqual(tt.err, errstring(err)) {
+			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
+		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
+			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt,                stmt)
+		}
+	}
+}
+
+func errstring(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
+}
